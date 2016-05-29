@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Emotion API Test</title>
+
+    <style>
+        #result {
+            height: 240px;
+            width: 320px;
+        }
+    </style>
+</head>
+<body>
+<script src="webcamjs/webcam.js"></script>
+
+<div id="camera" style="width:320px; height:240px;"></div>
+<div id="result"></div>
+<div id="result-text"></div>
+
+<script language="JavaScript">
+    Webcam.attach('#camera');
+
+    function take_snapshot() {
+        var myCanvas = document.querySelector("#result");
+
+        Webcam.set({
+            width: 320,
+            height: 240,
+            dest_width: 320,
+            dest_height: 240
+        });
+
+        Webcam.snap( function(data_uri, canvas, context) {
+            //document.getElementById('result').innerHTML = '<img src="'+data_uri+'"/>';
+            Webcam.upload(data_uri, "http://localhost:9000/analyze-face", function (code, text) {
+                var response = JSON.parse(text);
+                console.log(canvas);
+                console.log(context);
+                myCanvas.appendChild(canvas);
+                window.wcContext = context;
+
+                var emotion = new Image();
+
+                emotion.onload = function () {
+                    context.drawImage(
+                            emotion,
+                            response["face"]["left"],
+                            response["face"]["top"],
+                            response["face"]["width"],
+                            response["face"]["height"]
+                    );
+                };
+
+                emotion.style = "height: 30px; width: 30px";
+                emotion.src = "images/" + response["emotion"] + ".png";
+
+                document.querySelector("#result-text").textContent = "Status code: " + code + " content: " + text;
+            }, myCanvas);
+        });
+    }
+</script>
+
+<a href="javascript:void(take_snapshot())">Take Snapshot</a>
+</body>
+</html>
